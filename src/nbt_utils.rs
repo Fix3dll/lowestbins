@@ -45,6 +45,8 @@ pub struct PartialExtraAttr {
     pub enhanced: bool,
     pub runes: Option<HashMap<String, u8>>,
     pub attributes: Option<HashMap<String, u8>>,
+    pub new_years_cake: Option<u16>,
+    pub baseStatBoostPercentage: Option<u8>,
 }
 
 #[derive(Deserialize)]
@@ -73,6 +75,11 @@ impl Item {
         let bytes: StdResult<Vec<u8>, _> = self.bytes.clone().into();
         let nbt: PartialNbt = from_gzip_reader(io::Cursor::new(bytes?))?;
         Ok(nbt)
+    }
+    pub fn pet_level(&self) -> Option<u16> {
+        let after_prefix = &self.name[self.name.find("[Lvl ")? + 5..];
+        let end_idx = after_prefix.find(']')?;
+        after_prefix[..end_idx].parse().ok()
     }
 }
 

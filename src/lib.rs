@@ -50,7 +50,7 @@ impl Conf {
     fn init() -> Self {
         let host = env::var(HOST).unwrap_or_else(|_| "127.0.0.1".to_owned());
         let port = env::var(PORT).unwrap_or_else(|_| "8080".to_string());
-        let save_to_disk = env::var(SAVE_TO_DISK).unwrap_or_else(|_| "1".to_owned());
+        let save_to_disk = env::var(SAVE_TO_DISK).unwrap_or_else(|_| "0".to_owned());
         let update_seconds =
             env::var(UPDATE_SECONDS).map_or(60, |f| f.parse().expect("Invalid number for update_seconds"));
         Self {

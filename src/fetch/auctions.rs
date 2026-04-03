@@ -31,6 +31,9 @@ pub fn parse_auctions(auctions: Vec<Item>, map: &DashMap<String, u64>) -> Result
                 Some(x) => {
                     let v: Pet = serde_json::from_str(x)?;
                     id = format!("PET-{}-{}", v.pet_type, v.tier);
+                    if let Some(level) = auction.pet_level().filter(|&l| l >= 100) {
+                        id = format!("{}-{}", id, (level / 100) * 100);
+                    }
                 }
                 None => {}
             }
@@ -60,18 +63,18 @@ pub fn parse_auctions(auctions: Vec<Item>, map: &DashMap<String, u64>) -> Result
                     }
                     None => {}
                 },
-                "ATTRIBUTE_SHARD" => match &nbt.tag.extra_attributes.attributes {
-                    Some(x) => {
-                        if x.len() == 1 {
-                            for (key, val) in x.iter() {
-                                id = format!("ATTRIBUTE_SHARD-{}-{}", key.to_ascii_uppercase(), val);
-                            }
-                        }
+                "NEW_YEAR_CAKE" => match &nbt.tag.extra_attributes.new_years_cake {
+                    Some(cake_year) => {
+                        id = format!("NEW_YEAR_CAKE-{}", cake_year);
                     }
                     None => {}
                 },
 
                 _ => {}
+            }
+
+            if let Some(50) = nbt.tag.extra_attributes.baseStatBoostPercentage {
+                id.push_str("-PERFECT");
             }
 
             let r = map.get(&id);
