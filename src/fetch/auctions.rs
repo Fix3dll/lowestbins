@@ -76,7 +76,7 @@ pub fn parse_auctions(auctions: Vec<Item>, map: &DashMap<String, u64>) -> Result
                 _ => {}
             }
 
-            if let Some(50) = nbt.tag.extra_attributes.baseStatBoostPercentage {
+            if nbt.tag.extra_attributes.baseStatBoostPercentage == Some(50) {
                 id.push_str("-PERFECT");
             }
 
