@@ -22,11 +22,13 @@ pub async fn get_auctions_page(page: i64) -> Result<HypixelResponse> {
 }
 
 pub fn parse_auctions(auctions: Vec<Item>, map: &DashMap<String, u64>) -> Result<()> {
+    let mut min_cake_price: Option<u64> = None;
     for auction in auctions.iter() {
         if auction.bin {
             let nbt = &auction.to_nbt()?.i[0];
             let mut id = nbt.tag.extra_attributes.id.clone();
             let count = nbt.count;
+            let price = auction.starting_bid / count as u64;
             match &nbt.tag.extra_attributes.pet {
                 Some(x) => {
                     let v: Pet = serde_json::from_str(x)?;
@@ -66,6 +68,7 @@ pub fn parse_auctions(auctions: Vec<Item>, map: &DashMap<String, u64>) -> Result
                 "NEW_YEAR_CAKE" => match &nbt.tag.extra_attributes.new_years_cake {
                     Some(cake_year) => {
                         id = format!("NEW_YEAR_CAKE-{}", cake_year);
+                        min_cake_price = Some(min_cake_price.map_or(price, |p| p.min(price)));
                     }
                     None => {}
                 },
@@ -78,7 +81,6 @@ pub fn parse_auctions(auctions: Vec<Item>, map: &DashMap<String, u64>) -> Result
             }
 
             let r = map.get(&id);
-            let price = auction.starting_bid / count as u64;
             if let Some(x) = r {
                 if *x < price {
                     continue;
@@ -86,6 +88,9 @@ pub fn parse_auctions(auctions: Vec<Item>, map: &DashMap<String, u64>) -> Result
             }
             map.insert(id, price);
         }
+    }
+    if let Some(price) = min_cake_price {
+        map.insert("NEW_YEAR_CAKE".to_owned(), price);
     }
     Ok(())
 }
