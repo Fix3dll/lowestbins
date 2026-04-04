@@ -65,6 +65,18 @@ print(json["ENCHANTMENT_ULTIMATE_SWARM_2"])
 
 > Returns a json object with all lowestbins
 
+#### Special handling
+
+Some items are normalized into custom keys in `/lowestbins`.
+
+- Pets: `PET-AMMONITE-LEGENDARY`, `PET-AMMONITE-LEGENDARY-100`
+- Potions: `POTION-HASTE-4-ENHANCED`
+- Runes: `RUNE-BITE-1`
+- New Year Cake: `NEW_YEAR_CAKE`, `NEW_YEAR_CAKE-1`
+- Perfect stats variants: `BOUNCY_BOOTS-PERFECT`
+
+Regular items still use normal ids, for example: `HYPERION`.
+
 #### `/lowestbins.txt`
 
 > Returns a text file with all lowestbins easier to parse and smaller in size
