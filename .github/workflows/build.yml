@@ -10,16 +10,20 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: ""
+  RUSTFLAGS: "--cfg reqwest_unstable"
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - name: install nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
       - name: Cargo Caching
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -28,14 +32,9 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: install nightly
-        run: rustup toolchain install nightly && rustup component add rust-src --toolchain nightly
-      # - name: Build
-      #   run: cargo build --release --no-default-features
-      # - run: cp target/release/lowestbins .
-      - name: build
-        run: make br
-      - run: cp target/x86_64-unknown-linux-gnu/release/lowestbins .
+      - name: Build
+        run: cargo build --release
+      - run: cp target/release/lowestbins .
       - name: Build and push
         uses: mr-smithers-excellent/docker-build-push@v5
         with:
@@ -46,8 +45,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: lowestbins
           path: ./lowestbins
-          if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn`
+          if-no-files-found: error
