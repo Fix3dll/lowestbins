@@ -15,8 +15,8 @@ RUN cargo build --release
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup --gid 1000 runner && \
-    adduser --uid 1000 --home /data --ingroup runner --disabled-password runner
+RUN groupadd --gid 1000 runner && \
+    useradd --uid 1000 --home-dir /data --create-home --gid runner runner
 
 USER runner
 VOLUME /data
