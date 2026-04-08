@@ -18,7 +18,7 @@
 
 </div>
 
-A fast and effecient lowestbins implementation this uses parrallel requests to fetch all lowestbins in less than **2.5 SECONDS** and uses the hyper server allowing for practically unlimited requests per second while only using 50mb of ram!  
+A fast and effecient lowestbins implementation this uses parrallel requests to fetch all lowestbins in less than **2.5 SECONDS** and uses the hyper server allowing for practically unlimited requests per second while only using 50mb of ram!
 Lowestbins-rs is used by [Skytils](https://github.com/Skytils/SkytilsMod) for the lowestbins feature.
 
 ## Hosted Instance
@@ -64,6 +64,10 @@ print(json["ENCHANTMENT_ULTIMATE_SWARM_2"])
 #### `/lowestbins` | `/lowestbins.json` | `/auctions/lowestbins`
 
 > Returns a json object with all lowestbins
+
+#### `/averages/{1-7}day`
+
+> Returns the historical price average for the specified number of days (e.g., `/averages/7day`). Requires `ENABLE_HISTORY=1`.
 
 #### Special handling
 
@@ -118,6 +122,7 @@ OVERWRITES # Overwrite values format: `BLESSED_BAIT:200,ROCK_CANDY:6000,NON_EXIS
 UPDATE_SECONDS # The amount of seconds to wait before updating the lowestbins
 WEBHOOK_URL # The webhook url used for reporting the requests (discord/discord compatible)
 RUST_LOG # The log level lowestbins=debug recommended
+ENABLE_HISTORY # set to 1 to enable historical price tracking (default: 0)
 ```
 
 ## Features
@@ -128,6 +133,7 @@ RUST_LOG # The log level lowestbins=debug recommended
 - skytils compatible
 - metrics endpoint `/metrics`
 - rust
+- price history
 
 ## Todo
 

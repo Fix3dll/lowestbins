@@ -1,8 +1,8 @@
 #![doc = include_str!("../README.md")]
-#![feature(test)]
 
 pub mod error;
 pub mod fetch;
+pub mod history;
 pub mod nbt_utils;
 pub mod server;
 pub mod webhook;
@@ -21,7 +21,7 @@ pub const SPONSOR: &str = "https://github.com/sponsors/Tricked-dev";
 use std::{
     collections::{BTreeMap, HashMap},
     env, fs,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use once_cell::sync::Lazy;
@@ -30,6 +30,7 @@ use reqwest::Client;
 
 const UPDATE_SECONDS: &str = "UPDATE_SECONDS";
 const SAVE_TO_DISK: &str = "SAVE_TO_DISK";
+const ENABLE_HISTORY: &str = "ENABLE_HISTORY";
 const OVERWRITES: &str = "OVERWRITES";
 const WEBHOOK_URL: &str = "WEBHOOK_URL";
 const PORT: &str = "PORT";
@@ -44,6 +45,7 @@ pub struct Conf {
     pub port: u16,
     pub update_seconds: u64,
     pub save_to_disk: bool,
+    pub enable_history: bool,
 }
 
 impl Conf {
@@ -53,12 +55,14 @@ impl Conf {
         let save_to_disk = env::var(SAVE_TO_DISK).unwrap_or_else(|_| "0".to_owned());
         let update_seconds =
             env::var(UPDATE_SECONDS).map_or(60, |f| f.parse().expect("Invalid number for update_seconds"));
+        let enable_history = env::var(ENABLE_HISTORY).unwrap_or_else(|_| "0".to_owned());
         Self {
             webhook_url: env::var(WEBHOOK_URL).ok(),
             overwrites: Conf::get_overwrites(),
             host,
             port: port.parse().expect("Invalid port"),
             save_to_disk: save_to_disk != "0",
+            enable_history: enable_history != "0",
             update_seconds,
         }
     }
@@ -112,11 +116,7 @@ pub fn round_to_nearest_15(value: u64) -> u64 {
 pub fn calc_next_update() -> u64 {
     let last_updated = LAST_UPDATED.lock();
     let elapsed = last_updated.elapsed().as_secs();
-    if elapsed > CONFIG.update_seconds {
-        0
-    } else {
-        CONFIG.update_seconds - elapsed
-    }
+    CONFIG.update_seconds.saturating_sub(elapsed)
 }
 
 include!(concat!(env!("OUT_DIR"), "/prices_map.rs"));

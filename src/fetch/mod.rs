@@ -57,8 +57,13 @@ pub async fn fetch_auctions() -> Result<()> {
     ))
     .await?;
 
-    let mut auc = AUCTIONS.lock();
-    auc.extend(new_auctions);
-    set_last_updates();
+    let snapshot = {
+        let mut auc = AUCTIONS.lock();
+        auc.extend(new_auctions);
+        set_last_updates();
+        auc.clone()
+    };
+    crate::history::update_history(snapshot);
+
     Ok(())
 }
