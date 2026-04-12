@@ -80,6 +80,86 @@ impl Conf {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum FilterType {
+    All = 0,
+    Auction = 1,
+    Bazaar = 2,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum FilterPrice {
+    Historical = 0,
+    Available = 1,
+}
+
+#[derive(Default, Clone)]
+pub struct PriceState {
+    pub historical_auctions: BTreeMap<String, u64>,
+    pub available_auctions: BTreeMap<String, u64>,
+    pub bazaar: BTreeMap<String, f64>,
+}
+
+impl PriceState {
+    pub fn get_price(&self, id: &str, q_type: FilterType, q_price: FilterPrice) -> Option<f64> {
+        let show_bz = q_type == FilterType::Bazaar || q_type == FilterType::All;
+        let show_auc = q_type == FilterType::Auction || q_type == FilterType::All;
+
+        #[allow(clippy::collapsible_if)]
+        if show_bz {
+            if let Some(&p) = self.bazaar.get(id) {
+                return Some(p);
+            }
+        }
+        if show_auc {
+            let target = if q_price == FilterPrice::Available {
+                &self.available_auctions
+            } else {
+                &self.historical_auctions
+            };
+            if let Some(&p) = target.get(id) {
+                return Some(p as f64);
+            }
+        }
+
+        None
+    }
+
+    pub fn for_each_price<F>(&self, q_type: FilterType, q_price: FilterPrice, mut f: F)
+    where
+        F: FnMut(&str, f64),
+    {
+        let show_auc = q_type == FilterType::Auction || q_type == FilterType::All;
+        let show_bz = q_type == FilterType::Bazaar || q_type == FilterType::All;
+
+        if show_auc {
+            let target = if q_price == FilterPrice::Available {
+                &self.available_auctions
+            } else {
+                &self.historical_auctions
+            };
+            for (k, &v) in target {
+                f(k, v as f64);
+            }
+        }
+        if show_bz {
+            for (k, &v) in &self.bazaar {
+                f(k, v);
+            }
+        }
+    }
+
+    pub fn build_combined_map(&self, q_type: FilterType, q_price: FilterPrice) -> BTreeMap<String, f64> {
+        let mut result = BTreeMap::new();
+        self.for_each_price(q_type, q_price, |k, v| {
+            result.insert(k.to_string(), v);
+        });
+        result
+    }
+}
+
 // Using lazy it's considered better than lazy_static!
 
 pub static API_URL: Lazy<String> =
@@ -122,10 +202,16 @@ pub fn calc_next_update() -> u64 {
 include!(concat!(env!("OUT_DIR"), "/prices_map.rs"));
 
 // Honestly there should be a better way to do this in a more memory efficient way i think?
-pub static AUCTIONS: Lazy<Mutex<BTreeMap<String, u64>>> = Lazy::new(|| {
-    let mut res: BTreeMap<String, u64> = fs::read("auctions.json")
-        .map(|x| serde_json::from_slice(&x).unwrap())
+pub static AUCTIONS: Lazy<Mutex<PriceState>> = Lazy::new(|| {
+    let historical_auctions: BTreeMap<String, u64> = fs::read("auctions.json")
+        .map(|x| serde_json::from_slice(&x).unwrap_or_default())
         .unwrap_or_default();
-    res.extend(HashMap::from(get_prices_map()));
+
+    let mut res = PriceState {
+        historical_auctions,
+        available_auctions: BTreeMap::new(),
+        bazaar: BTreeMap::new(),
+    };
+    res.historical_auctions.extend(HashMap::from(get_prices_map()));
     Mutex::new(res)
 });
